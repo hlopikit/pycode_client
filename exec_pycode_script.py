@@ -1,5 +1,7 @@
 import sys
+import time
 
+import get_lock
 from pycode_context import pycode_context
 from helpers import call_pycode_method, is_serializable
 
@@ -76,6 +78,9 @@ def process_task(task, secret):
 
 
 def process_activities(secret):
+    lock = get_lock.lock(secret)
+    if not lock:
+        return
     processed = errors = 0
     while True:
         try:
@@ -95,11 +100,14 @@ def process_activities(secret):
             errors += 1
 
     print('Task processed: {}, errors: {}'.format(processed, errors))
+    get_lock.unlock(lock)
 
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
-        process_activities(secret=sys.argv[1])
+        for i in range(12):
+            process_activities(secret=sys.argv[1])
+            time.sleep(5)
 
     else:
         print('bad params: {}'.format(sys.argv or '(empty)'))
